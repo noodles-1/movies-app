@@ -1,9 +1,19 @@
 package app
 
 import (
-	"github.com/revel/revel"
-	_ "github.com/revel/modules"
+	"context"
+	"fmt"
+	"log"
+	"os"
 
+	_ "github.com/revel/modules"
+	"github.com/revel/revel"
+
+	"github.com/joho/godotenv"
+
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 )
 
 var (
@@ -13,6 +23,36 @@ var (
 	// BuildTime revel app build-time (ldflags)
 	BuildTime string
 )
+
+func InitDB() {
+	err := godotenv.Load()
+
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	accessKey := os.Getenv("AWS_ACCESS_KEY")
+	secretKey := os.Getenv("AWS_SECRET_KEY")
+	region := os.Getenv("AWS_REGION")
+
+	cfg, err := config.LoadDefaultConfig(context.TODO(),
+		config.WithRegion(region),
+		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(accessKey, secretKey, "")),
+	)
+
+	if err != nil {
+		log.Fatal("Failed to load AWS config: %v", err)
+	}
+
+	dynamoClient := dynamodb.NewFromConfig(cfg)
+	output, err := dynamoClient.ListTables(context.TODO(), &dynamodb.ListTablesInput{})
+
+	if err != nil {
+		log.Fatal("Failed to list tables: %v", err)
+	}
+
+	fmt.Println("Tables: ", output.TableNames)
+}
 
 func init() {
 	// Filters is the default set of global filters.
@@ -36,8 +76,8 @@ func init() {
 	// revel.DevMode and revel.RunMode only work inside of OnAppStart. See Example Startup Script
 	// ( order dependent )
 	// revel.OnAppStart(ExampleStartupScript)
-	// revel.OnAppStart(InitDB)
 	// revel.OnAppStart(FillCache)
+	revel.OnAppStart(InitDB)
 }
 
 // HeaderFilter adds common security headers
