@@ -12,6 +12,8 @@ GET     /                                       App.Index
 GET     /movies                                 Movies.Index
 GET     /movies/:id                             Movies.GetMovie
 POST    /movies                                 Movies.AddMovie
+PUT     /movies/:id                             Movies.UpdateMovie
+DELETE  /movies/:id                             Movies.DeleteMovie
 
 # Ignore favicon requests
 GET     /favicon.ico                            404
