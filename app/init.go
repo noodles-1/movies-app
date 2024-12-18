@@ -2,18 +2,15 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
-
-	_ "github.com/revel/modules"
-	"github.com/revel/revel"
-
-	"github.com/joho/godotenv"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/joho/godotenv"
+	_ "github.com/revel/modules"
+	"github.com/revel/revel"
 )
 
 var (
@@ -22,11 +19,12 @@ var (
 
 	// BuildTime revel app build-time (ldflags)
 	BuildTime string
+
+	DynamoClient *dynamodb.Client
 )
 
 func InitDB() {
 	err := godotenv.Load()
-
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
@@ -39,19 +37,11 @@ func InitDB() {
 		config.WithRegion(region),
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(accessKey, secretKey, "")),
 	)
-
 	if err != nil {
-		log.Fatal("Failed to load AWS config: %v", err)
+		log.Fatal("Failed to load AWS config: ", err)
 	}
 
-	dynamoClient := dynamodb.NewFromConfig(cfg)
-	output, err := dynamoClient.ListTables(context.TODO(), &dynamodb.ListTablesInput{})
-
-	if err != nil {
-		log.Fatal("Failed to list tables: %v", err)
-	}
-
-	fmt.Println("Tables: ", output.TableNames)
+	DynamoClient = dynamodb.NewFromConfig(cfg)
 }
 
 func init() {
